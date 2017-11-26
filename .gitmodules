@@ -1,0 +1,4 @@
+[submodule "Assets/GitSubmodules/UniPrep"]
+	path = Assets/GitSubmodules/UniPrep
+	url = https://github.com/adrenak/UniPrep
+	branch = master
