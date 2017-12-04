@@ -2,7 +2,7 @@
 using UnityEngine;
 
 namespace UniCull {
-    public class DistanceCulledRenderer : MonoBehaviour {
+    public class OcclusionCulledRenderer : MonoBehaviour {
         // INTERNAL STRUCTURES
         // Instead of keeping an array of Renderers, we store renderers in a struct
         // Reason : Class object arrays are not stored contigiously but struct object arrays are
@@ -61,6 +61,7 @@ namespace UniCull {
         private void Start() {
             CacheRenderers();
             DisableAllRendererContainers();
+            AddTriggerCollider();
         }
 
         void CacheRenderers() {
@@ -79,7 +80,7 @@ namespace UniCull {
 
                 case RendererCachingScheme.CHILDREN:
                     Renderer[] _renderers = GetComponentsInChildren<Renderer>();
-                    if(_renderers.Length > 0) {
+                    if (_renderers.Length > 0) {
                         rendererContainers = new RendererContainer[_renderers.Length];
                         for (int i = 0; i < _renderers.Length; i++)
                             rendererContainers[i].renderer = _renderers[i];
@@ -96,24 +97,30 @@ namespace UniCull {
                 c.renderer.enabled = true;
         }
 
+        void AddTriggerCollider() {
+            var trigger = gameObject.AddComponent<BoxCollider>();
+            trigger.isTrigger = true;
+            trigger.size = GetComponent<Renderer>().bounds.extents;
+        }
+
         // ================================================
         // LIFECYCLE
         // ================================================
         private void OnEnable() {
-            CameraDistanceCuller culler;
-            if(GetCullerInstance(out culler))
+            CameraOcclusionCuller culler;
+            if (GetCullerInstance(out culler))
                 culler.Register(this);
         }
 
         private void OnDisable() {
-            CameraDistanceCuller culler;
+            CameraOcclusionCuller culler;
             if (GetCullerInstance(out culler))
                 culler.Deregister(this);
         }
 
-        bool GetCullerInstance(out CameraDistanceCuller culler) {
-            culler = CameraDistanceCuller.Instance;
-            if (culler != null) 
+        bool GetCullerInstance(out CameraOcclusionCuller culler) {
+            culler = CameraOcclusionCuller.Instance;
+            if (culler != null)
                 return true;
             return false;
         }
@@ -125,4 +132,5 @@ namespace UniCull {
             Gizmos.DrawSphere(transform.position, renderDistance);
         }
     }
+
 }

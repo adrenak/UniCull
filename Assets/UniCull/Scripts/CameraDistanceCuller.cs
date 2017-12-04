@@ -3,20 +3,18 @@ using System.Collections;
 using System.Collections.Generic;
 
 namespace UniCull {
-    public class CameraCuller : MonoBehaviour {
-        static CameraCuller instance;
-        public static CameraCuller Instance {
+    public class CameraDistanceCuller : MonoBehaviour {
+        static CameraDistanceCuller instance;
+        public static CameraDistanceCuller Instance {
             get {
                 if (instance == null)
-                    instance = GameObject.FindObjectOfType<CameraCuller>();
+                    instance = GameObject.FindObjectOfType<CameraDistanceCuller>();
                 return instance;
             }
         }
 
-        public bool optimise;
         public int maxChecksPerFrame = 1000;
         List<DistanceCulledRenderer> distCullRenderers = new List<DistanceCulledRenderer>();
-        DistanceCulledRenderer[] array;
 
         public void Register(DistanceCulledRenderer obj) {
             if(!distCullRenderers.Contains(obj))
