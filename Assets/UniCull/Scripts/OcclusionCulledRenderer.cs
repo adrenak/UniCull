@@ -61,7 +61,6 @@ namespace UniCull {
         private void Start() {
             CacheRenderers();
             DisableAllRendererContainers();
-            AddTriggerCollider();
         }
 
         void CacheRenderers() {
@@ -95,12 +94,6 @@ namespace UniCull {
         void DisableAllRendererContainers() {
             foreach (RendererContainer c in rendererContainers)
                 c.renderer.enabled = true;
-        }
-
-        void AddTriggerCollider() {
-            var trigger = gameObject.AddComponent<BoxCollider>();
-            trigger.isTrigger = true;
-            trigger.size = GetComponent<Renderer>().bounds.extents;
         }
 
         // ================================================

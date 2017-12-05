@@ -44,10 +44,11 @@ namespace UniCull {
             camera = GetComponent<Camera>();
             while (true) {
                 scannedRenderers.Clear();
-                for (int i = 0; i < rayRows; i++) {
-                    for (int j = 0; j < rayCols; j++) {
-                        var v = new Vector3(i * (float)Screen.width / rayRows, j * (float)Screen.height / rayCols);
-                        ray = camera.ScreenPointToRay(v);
+                for (int i = 0; i < rayCols; i++) {
+                    for (int j = 0; j < rayRows; j++) {
+                        var sp = new Vector3(j * (float)Screen.width / rayCols, i * (float)Screen.height / rayRows);
+                        ray = camera.ScreenPointToRay(sp);
+
                         rays.Add(ray);
                         if (Physics.Raycast(ray, out hit, camera.farClipPlane)) {
                             var collider = hit.collider;
@@ -71,9 +72,6 @@ namespace UniCull {
                     else
                         occCullRenderers[i].MakeInvisible();
                 }
-
-                //for (int i = 0; i < updateRate; i++)
-                //    yield return new WaitForEndOfFrame();
             }
         }
 
