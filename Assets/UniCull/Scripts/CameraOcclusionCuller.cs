@@ -17,11 +17,12 @@ namespace UniCull {
         public int rayRows;
         public int updateRate;
         List<OcclusionCulledRenderer> occCullRenderers = new List<OcclusionCulledRenderer>();
-        List<OcclusionCulledRenderer> scannedRenderers = new List<OcclusionCulledRenderer>();
+        HashSet<OcclusionCulledRenderer> scannedRenderers = new HashSet<OcclusionCulledRenderer>();
 
-        new  Camera camera;
+        new Camera camera;
         RaycastHit hit;
         Ray ray;
+        List<Ray> rays = new List<Ray>();
 
         public void Register(OcclusionCulledRenderer obj) {
             if (!occCullRenderers.Contains(obj))
@@ -33,15 +34,22 @@ namespace UniCull {
                 occCullRenderers.Remove(obj);
         }
 
+        private void Update() {
+            foreach (var r in rays)
+                Debug.DrawRay(r.origin, r.direction * camera.farClipPlane, Color.red);
+            rays.Clear();
+        }
+
         IEnumerator Start() {
             camera = GetComponent<Camera>();
             while (true) {
                 scannedRenderers.Clear();
-                for (int i = 0; i < rayRows; i ++) {
+                for (int i = 0; i < rayRows; i++) {
                     for (int j = 0; j < rayCols; j++) {
                         var v = new Vector3(i * (float)Screen.width / rayRows, j * (float)Screen.height / rayCols);
                         ray = camera.ScreenPointToRay(v);
-                        if(Physics.Raycast(ray, out hit, camera.farClipPlane)) {
+                        rays.Add(ray);
+                        if (Physics.Raycast(ray, out hit, camera.farClipPlane)) {
                             var collider = hit.collider;
                             if (collider == null)
                                 break;
@@ -53,17 +61,19 @@ namespace UniCull {
                                 scannedRenderers.Add(ocr);
                         }
                     }
+                    if (i % updateRate == 0)
+                        yield return new WaitForEndOfFrame();
                 }
 
-                for(int i = 0; i < occCullRenderers.Count; i++) {
+                for (int i = 0; i < occCullRenderers.Count; i++) {
                     if (scannedRenderers.Contains(occCullRenderers[i]))
                         occCullRenderers[i].MakeVisible();
                     else
                         occCullRenderers[i].MakeInvisible();
                 }
 
-                for (int i = 0; i < updateRate; i++)
-                    yield return new WaitForEndOfFrame();
+                //for (int i = 0; i < updateRate; i++)
+                //    yield return new WaitForEndOfFrame();
             }
         }
 
