@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
-using System.Collections;
 using System.Collections.Generic;
+using UniPrep.Utils;
 
 namespace UniCull {
     public class CameraOcclusionCuller : MonoBehaviour {
@@ -13,9 +13,10 @@ namespace UniCull {
             }
         }
 
-        public int rayCols;
-        public int rayRows;
-        public int updateRate;
+        public float scale;
+        public int frameLength;
+
+        int rayCols, rayRows;
         List<OcclusionCulledRenderer> occCullRenderers = new List<OcclusionCulledRenderer>();
         HashSet<OcclusionCulledRenderer> scannedRenderers = new HashSet<OcclusionCulledRenderer>();
 
@@ -23,6 +24,7 @@ namespace UniCull {
         RaycastHit hit;
         Ray ray;
         List<Ray> rays = new List<Ray>();
+        bool doScan = true;
 
         public void Register(OcclusionCulledRenderer obj) {
             if (!occCullRenderers.Contains(obj))
@@ -38,41 +40,47 @@ namespace UniCull {
             foreach (var r in rays)
                 Debug.DrawRay(r.origin, r.direction * camera.farClipPlane, Color.red);
             rays.Clear();
+            if (doScan) Scan();
         }
 
-        IEnumerator Start() {
-            camera = GetComponent<Camera>();
-            while (true) {
-                scannedRenderers.Clear();
-                for (int i = 0; i < rayCols; i++) {
-                    for (int j = 0; j < rayRows; j++) {
-                        var sp = new Vector3(j * (float)Screen.width / rayCols, i * (float)Screen.height / rayRows);
-                        ray = camera.ScreenPointToRay(sp);
+        void Scan() {
+            doScan = false;
 
-                        rays.Add(ray);
-                        if (Physics.Raycast(ray, out hit, camera.farClipPlane)) {
-                            var collider = hit.collider;
-                            if (collider == null)
-                                break;
-                            var ocr = collider.GetComponent<OcclusionCulledRenderer>();
-                            if (ocr == null)
-                                break;
+            OverFrames.Get().For(0, rayRows, frameLength, i => {
+                for(int j = 0; j < rayCols; j++) {
+                    var screenPoint = new Vector3(j * (float)Screen.width / rayCols, i  * (float)Screen.height / rayRows);
+                    var ray = camera.ScreenPointToRay(screenPoint);
+                    rays.Add(ray);
 
+                    if (Physics.Raycast(ray, out hit, camera.farClipPlane)) {
+                        var collider = hit.collider;
+                        if (collider == null)
+                            break;
+                        var ocr = collider.GetComponent<OcclusionCulledRenderer>();
+                        if (ocr != null) {
                             if (!scannedRenderers.Contains(ocr))
                                 scannedRenderers.Add(ocr);
                         }
-                    }
-                    if (i % updateRate == 0)
-                        yield return new WaitForEndOfFrame();
-                }
 
+                    }
+                }
+            },
+            () => {
                 for (int i = 0; i < occCullRenderers.Count; i++) {
                     if (scannedRenderers.Contains(occCullRenderers[i]))
                         occCullRenderers[i].MakeVisible();
                     else
                         occCullRenderers[i].MakeInvisible();
                 }
-            }
+                scannedRenderers.Clear();
+                doScan = true;
+            });
+        }
+
+        void Start() {
+            camera = GetComponent<Camera>();
+            rayCols = (int)(Screen.width * scale);
+            rayRows = (int)(Screen.height * scale);
         }
 
         private void OnDisable() {
